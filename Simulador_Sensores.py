@@ -100,7 +100,7 @@ class WeatherStationProducer:
 if __name__ == "__main__":
     # Configuración
     BOOTSTRAP_SERVER = 'lab9.alumchat.lol:9092'
-    TOPIC = '12345'  # Cambiar por tu número de carné
+    TOPIC = '22049'
     SENSOR_ID = 'sensor1'
     
     # Crear y ejecutar producer
