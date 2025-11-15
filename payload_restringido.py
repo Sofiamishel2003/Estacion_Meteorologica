@@ -4,6 +4,7 @@ import time
 import random
 import numpy as np
 import struct
+from datetime import datetime
 
 class CompressedWeatherCodec:
     """
@@ -110,6 +111,7 @@ class CompressedWeatherProducer:
         hum = np.random.normal(self.hum_mean, self.hum_std)
         hum = max(0, min(100, int(hum)))
         
+        print(f"\nData Generada en {datetime.fromtimestamp(time.time())}:\n")
         wind = random.choice(self.codec.WIND_DIRECTIONS)
         
         return temp, hum, wind
@@ -188,7 +190,7 @@ class CompressedWeatherConsumer:
         try:
             byte_data = message.value
             
-            print(f"\n✓ Mensaje recibido")
+            print(f"\n✓ Mensaje recibido en {datetime.fromtimestamp(time.time())}\n")
             print(f"  Bytes: {byte_data.hex().upper()} ({len(byte_data)} bytes)")
             print(f"  Binario: {bin(int.from_bytes(byte_data, 'big'))[2:].zfill(24)}")
             
@@ -223,7 +225,7 @@ class CompressedWeatherConsumer:
 if __name__ == "__main__":
     import sys
     
-    BOOTSTRAP_SERVER = 'lab9.alumchat.lol:9092'
+    BOOTSTRAP_SERVER = 'iot.redesuvg.cloud:9092'
     TOPIC = '22049'
     
     if len(sys.argv) < 2:

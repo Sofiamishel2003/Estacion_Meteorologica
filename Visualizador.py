@@ -48,13 +48,15 @@ class WeatherStationConsumer:
             self.temperatures.append(temp)
             self.humidities.append(hum)
             self.wind_directions.append(wind)
-            self.timestamps.append(datetime.fromtimestamp(timestamp))
+            
+            date = datetime.fromtimestamp(timestamp)
+            self.timestamps.append(date)
             
             # Actualizar contador de viento
             if wind in self.wind_counts:
                 self.wind_counts[wind] += 1
             
-            print(f"✓ Mensaje recibido:")
+            print(f"✓ Mensaje recibido en {date}:")
             print(f"  Temperatura: {temp}°C")
             print(f"  Humedad: {hum}%")
             print(f"  Dirección del viento: {wind}")
@@ -79,7 +81,7 @@ class WeatherStationConsumer:
     
     def plot_data(self):
         """Crea gráficos en tiempo real de los datos"""
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 10))
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(7, 5))
         fig.suptitle('Estación Meteorológica - Telemetría en Tiempo Real', 
                      fontsize=16, fontweight='bold')
         
@@ -150,9 +152,9 @@ class WeatherStationConsumer:
 
 if __name__ == "__main__":
     # Configuración
-    BOOTSTRAP_SERVER = 'lab9.alumchat.lol:9092'
-    TOPIC = '22049' 
-    GROUP_ID = 'weather_group'
+    BOOTSTRAP_SERVER = 'iot.redesuvg.cloud:9092'
+    TOPIC = '22398'
+    GROUP_ID = 'sensor1'
     
     # Crear consumer
     consumer = WeatherStationConsumer(

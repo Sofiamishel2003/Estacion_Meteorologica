@@ -3,6 +3,8 @@ import json
 import time
 import random
 import numpy as np
+import pprint
+from datetime import datetime
 
 class WeatherStationProducer:
     def __init__(self, bootstrap_server, topic, sensor_id='sensor1'):
@@ -43,12 +45,20 @@ class WeatherStationProducer:
     
     def generate_data(self):
         """Genera un conjunto completo de datos meteorológicos"""
-        return {
+        
+        t = time.time()
+        data = {
             'temperatura': self.generate_temperature(),
             'humedad': self.generate_humidity(),
             'direccion_viento': self.generate_wind_direction(),
-            'timestamp': time.time()
+            'timestamp': t
         }
+        print(f"\nData Generada en {datetime.fromtimestamp(t)}:\n")
+        pprint.pprint(data)
+        print("\n")
+        
+        return data
+        
     
     def send_data(self, data):
         """Envía datos al topic de Kafka"""
@@ -99,8 +109,8 @@ class WeatherStationProducer:
 
 if __name__ == "__main__":
     # Configuración
-    BOOTSTRAP_SERVER = 'lab9.alumchat.lol:9092'
-    TOPIC = '22049'
+    BOOTSTRAP_SERVER = 'iot.redesuvg.cloud:9092'
+    TOPIC = '22398' # Carnet
     SENSOR_ID = 'sensor1'
     
     # Crear y ejecutar producer
