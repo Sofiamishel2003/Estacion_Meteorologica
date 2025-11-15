@@ -1,3 +1,4 @@
+from collections import deque
 from kafka import KafkaProducer, KafkaConsumer
 import json
 import time
@@ -5,6 +6,8 @@ import random
 import numpy as np
 import struct
 from datetime import datetime
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 class CompressedWeatherCodec:
     """
@@ -182,6 +185,14 @@ class CompressedWeatherConsumer:
         self.codec = CompressedWeatherCodec()
         self.data_history = []
         
+        self.last_encoded = ""
+        self.max_points = 50
+        self.temperatures = deque(maxlen=self.max_points)
+        self.humidities = deque(maxlen=self.max_points)
+        self.wind_directions = deque(maxlen=self.max_points)
+        self.timestamps = deque(maxlen=self.max_points)
+        self.wind_counts = {dir: 0 for dir in ['N', 'NO', 'O', 'SO', 'S', 'SE', 'E', 'NE']}
+        
         print(f"Consumer Comprimido iniciado en topic '{topic}'")
         print("-" * 70)
     
@@ -196,8 +207,18 @@ class CompressedWeatherConsumer:
             
             # Decodificar
             decoded = self.codec.decode(byte_data)
-            
+            self.last_encoded = byte_data.hex().upper()
+            #guardar
+            temp = decoded.get('temperatura')
+            hum = decoded.get('humedad')
+            wind = decoded.get('direccion_viento')
+            self.temperatures.append(temp)
+            self.humidities.append(hum)
+            self.wind_directions.append(wind)
+            self.wind_counts[wind]+=1
             print(f"  Decodificado:")
+            
+            
             print(f"    Temperatura: {decoded['temperatura']}°C")
             print(f"    Humedad: {decoded['humedad']}%")
             print(f"    Dirección del viento: {decoded['direccion_viento']}")
@@ -221,6 +242,77 @@ class CompressedWeatherConsumer:
         finally:
             self.consumer.close()
 
+    def consume_and_display(self):
+        """Crea gráficos en tiempo real de los datos"""
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(7, 5))
+        fig.suptitle('Estación Meteorológica - Telemetría en Tiempo Real\nVersion Comprimida (3 Bytes)', 
+                     fontsize=16, fontweight='bold')
+        text_obj = fig.text(0, 0, "Last Data:", fontsize=12)
+
+        def update(frame):
+            # Consumir nuevo mensaje si está disponible
+            try:
+                message = next(self.consumer, None)
+                if message:
+                    self.process_message(message)
+            except:
+                pass
+            
+            # Limpiar gráficos
+            ax1.clear()
+            ax2.clear()
+            ax3.clear()
+            ax4.clear()
+            
+            if len(self.temperatures) > 0:
+                text_obj.set_text(f"Last Data: {self.last_encoded}")
+                # Gráfico 1: Temperatura vs Tiempo
+                ax1.plot(list(self.temperatures), 'r-o', linewidth=2, markersize=4)
+                ax1.set_title('Temperatura', fontweight='bold')
+                ax1.set_xlabel('Muestra')
+                ax1.set_ylabel('Temperatura (°C)')
+                ax1.grid(True, alpha=0.3)
+                ax1.set_ylim([0, 110])
+                
+                # Gráfico 2: Humedad vs Tiempo
+                ax2.plot(list(self.humidities), 'b-o', linewidth=2, markersize=4)
+                ax2.set_title('Humedad Relativa', fontweight='bold')
+                ax2.set_xlabel('Muestra')
+                ax2.set_ylabel('Humedad (%)')
+                ax2.grid(True, alpha=0.3)
+                ax2.set_ylim([0, 100])
+                
+                # Gráfico 3: Temperatura vs Humedad
+                ax3.scatter(self.humidities, self.temperatures, 
+                           c=range(len(self.temperatures)), cmap='viridis', s=50)
+                ax3.set_title('Temperatura vs Humedad', fontweight='bold')
+                ax3.set_xlabel('Humedad (%)')
+                ax3.set_ylabel('Temperatura (°C)')
+                ax3.grid(True, alpha=0.3)
+                
+                # Gráfico 4: Rosa de los vientos (distribución)
+                directions = list(self.wind_counts.keys())
+                counts = list(self.wind_counts.values())
+                colors = plt.cm.viridis([c / max(counts) if max(counts) > 0 else 0 for c in counts])
+                bars = ax4.bar(directions, counts, color=colors)
+                ax4.set_title('Distribución de Dirección del Viento', fontweight='bold')
+                ax4.set_xlabel('Dirección')
+                ax4.set_ylabel('Frecuencia')
+                ax4.grid(True, alpha=0.3, axis='y')
+                
+                # Añadir valores encima de las barras
+                for bar in bars:
+                    height = bar.get_height()
+                    if height > 0:
+                        ax4.text(bar.get_x() + bar.get_width()/2., height,
+                                f'{int(height)}',
+                                ha='center', va='bottom', fontsize=9)
+            
+            plt.tight_layout()
+        
+        # Animar gráficos
+        ani = FuncAnimation(fig, update, interval=1000, cache_frame_data=False)
+        plt.show()
 
 if __name__ == "__main__":
     import sys
@@ -239,6 +331,6 @@ if __name__ == "__main__":
         producer.run()
     elif mode == 'consumer':
         consumer = CompressedWeatherConsumer(BOOTSTRAP_SERVER, TOPIC)
-        consumer.consume()
+        consumer.consume_and_display()
     else:
         print("Modo inválido. Usar 'producer' o 'consumer'")

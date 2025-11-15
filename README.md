@@ -25,4 +25,4 @@ Basandonos en el codigo de las partes anteriores, este archivo comprende las cla
     ```
         python payload_restringido.py consumer
     ```
-Ambos imprimen su contenido en consola. El productor indica los valores generados y la version compresa en 3 bytes en formato hex. Asimismo, el consumidor muestra el contenido recibido en consola y el decoding aplicado.
+Ambos imprimen su contenido en consola. El productor indica los valores generados y la version compresa en 3 bytes en formato hex. Asimismo, el consumidor muestra el contenido recibido en consola e igual que su version pasada visualiza el contenido que vaya recibiendo.
